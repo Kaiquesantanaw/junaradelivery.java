@@ -1,0 +1,65 @@
+giHELP.md
+target/
+.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### VS Code ###
+.vscode/
+
+### Arquivos sensíveis - NUNCA subir ao GitHub ###
+# Variáveis de ambiente
+.env
+.env.*
+*.env
+
+# Configurações de produção com senhas
+application-prod.properties
+application-local.properties
+*-secrets.properties
+
+# Certificados e chaves
+*.jks
+*.keystore
+*.p12
+*.pem
+*.key
+*.crt
+*.cer
+
+# Logs
+*.log
+logs/
+
+# Uploads de usuários
+src/main/resources/static/uploads/*
+!src/main/resources/static/uploads/.gitkeep
+
+### Sistema operacional ###
+.DS_Store
+Thumbs.db
