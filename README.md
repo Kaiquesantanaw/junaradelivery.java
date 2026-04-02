@@ -202,7 +202,7 @@ CREATE DATABASE junara;
 
 3. Edite: `src/main/resources/application-prod.properties`
 ```properties
-spring.datasource.url=jdbc:postgresql://localhost:5432/junara
+spring.datasource.url=jdbc:postgresql://localhost:5432/nnnnn
 spring.datasource.username=postgres
 spring.datasource.password=sua_senha
 ```
