@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Junara Delivery - Faça seu Pedido</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f3f4f6; }
+        /* Header */
+        header {
+            background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+            color: #fff; padding: 16px 24px;
+            display: flex; align-items: center; justify-content: space-between;
+            position: sticky; top: 0; z-index: 100;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+        .header-logo { font-size: 1.4rem; font-weight: 700; }
+        .header-logo small { font-size: 0.75rem; font-weight: 400; opacity: 0.85; display: block; }
+        .cart-btn {
+            background: rgba(255,255,255,0.2); border: 2px solid rgba(255,255,255,0.4);
+            color: #fff; padding: 10px 20px; border-radius: 999px;
+            cursor: pointer; font-size: 0.95rem; font-weight: 600;
+            transition: background 0.2s;
+        }
+        .cart-btn:hover { background: rgba(255,255,255,0.3); }
+        .cart-count {
+            background: #fff; color: #ea580c;
+            border-radius: 999px; padding: 2px 8px; font-size: 0.8rem;
+            font-weight: 700; margin-left: 6px;
+        }
+        /* Layout */
+        .container { max-width: 1200px; margin: 0 auto; padding: 24px; }
+        .layout { display: grid; grid-template-columns: 1fr 360px; gap: 24px; }
+        @media (max-width: 768px) { .layout { grid-template-columns: 1fr; } }
+        /* Products */
+        .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px; }
+        .product-card {
+            background: #fff; border-radius: 12px; overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08); transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .product-card:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(0,0,0,0.12); }
+        .product-img {
+            width: 100%; height: 200px; object-fit: cover; background: #f3f4f6;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 3rem;
+        }
+        .product-img img { width: 100%; height: 200px; object-fit: cover; }
+        .product-info { padding: 16px; }
+        .product-name { font-size: 1rem; font-weight: 700; color: #1f2937; margin-bottom: 4px; }
+        .product-desc { font-size: 0.85rem; color: #6b7280; margin-bottom: 12px; line-height: 1.4; }
+        .product-price { font-size: 1.2rem; font-weight: 700; color: #ea580c; margin-bottom: 12px; }
+        .product-actions { display: flex; align-items: center; gap: 10px; }
+        .qty-ctrl { display: flex; align-items: center; gap: 8px; }
+        .qty-btn {
+            width: 32px; height: 32px; border: 2px solid #e5e7eb; background: #fff;
+            border-radius: 8px; cursor: pointer; font-size: 1rem; font-weight: 700;
+            display: flex; align-items: center; justify-content: center;
+            transition: border-color 0.2s;
+        }
+        .qty-btn:hover { border-color: #ea580c; color: #ea580c; }
+        .qty-val { font-size: 1rem; font-weight: 700; min-width: 24px; text-align: center; color: #1f2937; }
+        .btn-add {
+            flex: 1; padding: 10px; background: #ea580c; color: #fff;
+            border: none; border-radius: 8px; cursor: pointer; font-size: 0.9rem;
+            font-weight: 600; transition: background 0.2s;
+        }
+        .btn-add:hover { background: #c2410c; }
+        /* Cart panel */
+        .cart-panel {
+            background: #fff; border-radius: 12px; padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08); position: sticky; top: 80px;
+            max-height: calc(100vh - 100px); overflow-y: auto;
+        }
+        .cart-title { font-size: 1.1rem; font-weight: 700; color: #1f2937; margin-bottom: 16px; }
+        .cart-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #f3f4f6; }
+        .cart-item:last-of-type { border-bottom: none; }
+        .cart-item-name { font-size: 0.9rem; color: #374151; }
+        .cart-item-qty { font-size: 0.8rem; color: #9ca3af; }
+        .cart-item-price { font-size: 0.9rem; font-weight: 700; color: #ea580c; }
+        .btn-remove { background: none; border: none; cursor: pointer; color: #dc2626; font-size: 1rem; padding: 2px 6px; }
+        .cart-empty { text-align: center; color: #9ca3af; padding: 32px 0; }
+        .cart-summary { margin-top: 16px; padding-top: 16px; border-top: 2px solid #e5e7eb; }
+        .summary-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.9rem; color: #6b7280; }
+        .summary-total { display: flex; justify-content: space-between; font-size: 1.1rem; font-weight: 700; color: #1f2937; margin-top: 8px; }
+        /* Checkout form */
+        .checkout-form { margin-top: 20px; padding-top: 20px; border-top: 2px solid #e5e7eb; }
+        .checkout-form h4 { margin-bottom: 12px; color: #1f2937; }
+        .form-group { margin-bottom: 12px; }
+        .form-group label { display: block; font-size: 0.8rem; font-weight: 600; color: #6b7280; margin-bottom: 4px; }
+        .form-group input, .form-group textarea {
+            width: 100%; padding: 10px; border: 2px solid #e5e7eb;
+            border-radius: 8px; font-size: 0.9rem; transition: border-color 0.2s;
+        }
+        .form-group input:focus, .form-group textarea:focus { outline: none; border-color: #ea580c; }
+        .btn-checkout {
+            width: 100%; padding: 14px; background: #ea580c; color: #fff;
+            border: none; border-radius: 8px; font-size: 1rem; font-weight: 700;
+            cursor: pointer; transition: background 0.2s; margin-top: 8px;
+        }
+        .btn-checkout:hover { background: #c2410c; }
+        .btn-checkout:disabled { background: #d1d5db; cursor: not-allowed; }
+        /* Modal */
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 9999; display: none;
+        }
+        .modal-overlay.open { display: flex; }
+        .modal {
+            background: #fff; border-radius: 16px; padding: 40px;
+            text-align: center; max-width: 400px; width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            animation: popIn 0.3s ease;
+        }
+        @keyframes popIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .modal-icon { font-size: 4rem; margin-bottom: 16px; }
+        .modal h3 { font-size: 1.5rem; color: #1f2937; margin-bottom: 8px; }
+        .modal p { color: #6b7280; margin-bottom: 24px; }
+        .btn-modal { padding: 12px 32px; background: #ea580c; color: #fff; border: none; border-radius: 8px; font-size: 1rem; font-weight: 700; cursor: pointer; }
+        /* Toast */
+        .toast {
+            position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+            background: #1f2937; color: #fff; padding: 12px 24px; border-radius: 10px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.2); display: none; z-index: 9998;
+            white-space: nowrap;
+        }
+        .toast.show { display: block; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateX(-50%) translateY(10px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+        /* Section title */
+        .section-title { margin-bottom: 20px; }
+        .section-title h2 { font-size: 1.4rem; color: #1f2937; }
+        .section-title p { color: #6b7280; font-size: 0.9rem; margin-top: 4px; }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="header-logo">
+        👨‍🍳 Junara Delivery
+        <small>Peça agora e receba em casa!</small>
+    </div>
+    <button class="cart-btn" onclick="scrollToCart()">
+        🛒 Carrinho <span class="cart-count" id="cartCount">0</span>
+    </button>
+</header>
+
+<div class="container">
+    <div class="layout">
+        <!-- Products -->
+        <div>
+            <div class="section-title">
+                <h2>🍕 Cardápio</h2>
+                <p>Escolha seus itens e monte seu pedido</p>
+            </div>
+            <div class="products-grid" id="productsGrid">
+                <p style="color:#9ca3af">Carregando produtos...</p>
+            </div>
+        </div>
+
+        <!-- Cart -->
+        <div id="cartPanel">
+            <div class="cart-panel">
+                <div class="cart-title">🛒 Seu Carrinho</div>
+                <div id="cartItems">
+                    <div class="cart-empty">
+                        <div style="font-size:2.5rem;margin-bottom:8px">🛒</div>
+                        <p>Seu carrinho está vazio</p>
+                        <p style="font-size:0.8rem;margin-top:4px">Adicione produtos ao lado</p>
+                    </div>
+                </div>
+                <div class="cart-summary" id="cartSummary" style="display:none">
+                    <div class="summary-row">
+                        <span>Subtotal</span>
+                        <span id="subtotal">R$ 0,00</span>
+                    </div>
+                    <div class="summary-row">
+                        <span>Taxa de entrega</span>
+                        <span>R$ 5,00</span>
+                    </div>
+                    <div class="summary-total">
+                        <span>Total</span>
+                        <span id="total">R$ 0,00</span>
+                    </div>
+                </div>
+                <div class="checkout-form" id="checkoutForm" style="display:none">
+                    <h4>📋 Seus Dados</h4>
+                    <div class="form-group">
+                        <label>Nome completo *</label>
+                        <input type="text" id="clienteNome" placeholder="João Silva" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Email *</label>
+                        <input type="email" id="clienteEmail" placeholder="joao@email.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Telefone *</label>
+                        <input type="tel" id="clienteTelefone" placeholder="(11) 91234-5678" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Endereço de entrega *</label>
+                        <textarea id="clienteEndereco" rows="2" placeholder="Rua, número, bairro, cidade" required></textarea>
+                    </div>
+                    <button class="btn-checkout" id="btnCheckout" onclick="confirmarPedido()">
+                        ✅ Confirmar Pedido
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Success Modal -->
+<div class="modal-overlay" id="successModal">
+    <div class="modal">
+        <div class="modal-icon">🎉</div>
+        <h3>Pedido Confirmado!</h3>
+        <p>Seu pedido foi recebido com sucesso. Em breve entraremos em contato!</p>
+        <button class="btn-modal" onclick="closeModal()">Fazer outro pedido</button>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API = '/api/v1';
+const TAXA_ENTREGA = 5.0;
+
+let products = [];
+let cart = []; // { product, quantity }
+
+function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+function scrollToCart() {
+    document.getElementById('cartPanel').scrollIntoView({ behavior: 'smooth' });
+}
+
+async function loadProducts() {
+    try {
+        const r = await fetch(`${API}/produtos`);
+        products = await r.json();
+        renderProducts();
+    } catch(e) {
+        document.getElementById('productsGrid').innerHTML = '<p style="color:#dc2626">Erro ao carregar produtos. Tente novamente.</p>';
+    }
+}
+
+function renderProducts() {
+    const grid = document.getElementById('productsGrid');
+    if (!products.length) {
+        grid.innerHTML = '<p style="color:#9ca3af;grid-column:1/-1;text-align:center;padding:40px">Nenhum produto disponível no momento.</p>';
+        return;
+    }
+    grid.innerHTML = products.map(p => `
+        <div class="product-card">
+            <div class="product-img">
+                ${p.imagemUrl
+                    ? `<img src="${p.imagemUrl}" alt="${p.nome}" onerror="this.parentElement.innerHTML='🍽️'">`
+                    : '🍽️'}
+            </div>
+            <div class="product-info">
+                <div class="product-name">${p.nome}</div>
+                <div class="product-desc">${p.descricao || ''}</div>
+                <div class="product-price">R$ ${(p.preco||0).toFixed(2).replace('.', ',')}</div>
+                <div class="product-actions">
+                    <div class="qty-ctrl">
+                        <button class="qty-btn" onclick="changeQty(${p.id}, -1)">−</button>
+                        <span class="qty-val" id="qty-${p.id}">1</span>
+                        <button class="qty-btn" onclick="changeQty(${p.id}, 1)">+</button>
+                    </div>
+                    <button class="btn-add" onclick="addToCart(${p.id})">Adicionar</button>
+                </div>
+            </div>
+        </div>`).join('');
+}
+
+function changeQty(productId, delta) {
+    const el = document.getElementById(`qty-${productId}`);
+    let v = parseInt(el.textContent) + delta;
+    if (v < 1) v = 1;
+    if (v > 99) v = 99;
+    el.textContent = v;
+}
+
+function addToCart(productId) {
+    const product = products.find(p => p.id === productId);
+    if (!product) return;
+    const qty = parseInt(document.getElementById(`qty-${productId}`).textContent);
+    const existing = cart.find(c => c.product.id === productId);
+    if (existing) {
+        existing.quantity += qty;
+    } else {
+        cart.push({ product, quantity: qty });
+    }
+    document.getElementById(`qty-${productId}`).textContent = 1;
+    showToast(`✅ ${product.nome} adicionado ao carrinho`);
+    renderCart();
+}
+
+function removeFromCart(productId) {
+    cart = cart.filter(c => c.product.id !== productId);
+    renderCart();
+}
+
+function renderCart() {
+    const itemsEl = document.getElementById('cartItems');
+    const summaryEl = document.getElementById('cartSummary');
+    const formEl = document.getElementById('checkoutForm');
+    const countEl = document.getElementById('cartCount');
+    const totalItems = cart.reduce((s, c) => s + c.quantity, 0);
+    countEl.textContent = totalItems;
+
+    if (!cart.length) {
+        itemsEl.innerHTML = `<div class="cart-empty">
+            <div style="font-size:2.5rem;margin-bottom:8px">🛒</div>
+            <p>Seu carrinho está vazio</p>
+            <p style="font-size:0.8rem;margin-top:4px">Adicione produtos ao lado</p>
+        </div>`;
+        summaryEl.style.display = 'none';
+        formEl.style.display = 'none';
+        return;
+    }
+
+    const subtotal = cart.reduce((s, c) => s + c.product.preco * c.quantity, 0);
+    const total = subtotal + TAXA_ENTREGA;
+
+    itemsEl.innerHTML = cart.map(c => `
+        <div class="cart-item">
+            <div>
+                <div class="cart-item-name">${c.product.nome}</div>
+                <div class="cart-item-qty">x${c.quantity} — R$ ${(c.product.preco * c.quantity).toFixed(2).replace('.',',')}</div>
+            </div>
+            <button class="btn-remove" onclick="removeFromCart(${c.product.id})">✕</button>
+        </div>`).join('');
+
+    document.getElementById('subtotal').textContent = 'R$ ' + subtotal.toFixed(2).replace('.', ',');
+    document.getElementById('total').textContent = 'R$ ' + total.toFixed(2).replace('.', ',');
+    summaryEl.style.display = 'block';
+    formEl.style.display = 'block';
+}
+
+async function confirmarPedido() {
+    const nome = document.getElementById('clienteNome').value.trim();
+    const email = document.getElementById('clienteEmail').value.trim();
+    const telefone = document.getElementById('clienteTelefone').value.trim();
+    const endereco = document.getElementById('clienteEndereco').value.trim();
+
+    if (!nome || !email || !telefone || !endereco) {
+        showToast('⚠️ Preencha todos os dados de entrega');
+        return;
+    }
+    if (!cart.length) {
+        showToast('⚠️ Carrinho vazio');
+        return;
+    }
+
+    const btn = document.getElementById('btnCheckout');
+    btn.disabled = true;
+    btn.textContent = 'Enviando...';
+
+    try {
+        // 1. Create or find client
+        const clienteResp = await fetch(`${API}/clientes`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ nome, email, telefone, endereco })
+        });
+        if (!clienteResp.ok) throw new Error('Erro ao criar cliente');
+        const cliente = await clienteResp.json();
+
+        // 2. Build product list (flat, repeated by quantity)
+        const produtoIds = cart.flatMap(c =>
+            Array(c.quantity).fill({ produtoId: c.product.id, quantidade: c.quantity })
+        );
+
+        // 3. Create order
+        const pedidoResp = await fetch(`${API}/pedidos/criar`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ clienteId: cliente.id, produtoIds })
+        });
+        if (!pedidoResp.ok) throw new Error('Erro ao criar pedido');
+
+        // Success
+        cart = [];
+        renderCart();
+        document.getElementById('clienteNome').value = '';
+        document.getElementById('clienteEmail').value = '';
+        document.getElementById('clienteTelefone').value = '';
+        document.getElementById('clienteEndereco').value = '';
+        document.getElementById('successModal').classList.add('open');
+    } catch(e) {
+        showToast('❌ Erro ao confirmar pedido: ' + e.message);
+    } finally {
+        btn.disabled = false;
+        btn.textContent = '✅ Confirmar Pedido';
+    }
+}
+
+function closeModal() {
+    document.getElementById('successModal').classList.remove('open');
+}
+
+loadProducts();
+</script>
+</body>
+</html>
