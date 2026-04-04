@@ -214,6 +214,50 @@ mvn spring-boot:run -Dspring-boot.run.arguments="--spring.profiles.active=prod"
 
 ---
 
+## 🌐 Expor Localmente com ngrok
+
+O [ngrok](https://ngrok.com) permite compartilhar o sistema localmente via URL pública — ideal para testes no celular ou com clientes.
+
+### **1. Instalar ngrok**
+```bash
+# Linux/macOS
+brew install ngrok/ngrok/ngrok
+
+# Ou baixe em: https://ngrok.com/download
+```
+
+### **2. Autenticar (gratuito)**
+```bash
+ngrok config add-authtoken <SEU_TOKEN>
+```
+Crie uma conta gratuita em [ngrok.com](https://ngrok.com) para obter o token.
+
+### **3. Iniciar o sistema e o túnel**
+Em dois terminais separados:
+```bash
+# Terminal 1 — iniciar o servidor
+mvn spring-boot:run
+
+# Terminal 2 — iniciar o túnel
+ngrok start --config ngrok.yml junara
+# ou, sem config:
+ngrok http 8081
+```
+
+### **4. Acessar via ngrok**
+O ngrok exibirá uma URL pública como:
+```
+Forwarding  https://xxxx-xx-xx-xx.ngrok-free.app -> http://localhost:8081
+```
+
+Compartilhe essa URL com seus clientes:
+- 🛍️ **Loja**: `https://xxxx.ngrok-free.app/shop`
+- 👨‍💼 **Admin**: `https://xxxx.ngrok-free.app/admin`
+
+> **Nota:** Com a conta gratuita do ngrok, a URL muda a cada reinicialização. Para uma URL fixa, faça upgrade para o plano pago.
+
+---
+
 ## 🚀 Deploy
 
 ### **Criar executável JAR**

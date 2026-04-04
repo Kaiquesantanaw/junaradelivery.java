@@ -1,0 +1,8 @@
+version: "3"
+
+tunnels:
+  junara:
+    proto: http
+    addr: 8081
+    schemes:
+      - https
