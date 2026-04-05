@@ -39,7 +39,6 @@ build/
 *.env
 
 # Configurações de produção com senhas
-application-prod.properties
 application-local.properties
 *-secrets.properties
 
