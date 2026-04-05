@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="pt-BR">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Junara Delivery - Login</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #ff6b35, #f7931e);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 2.5rem;
+            width: 100%;
+            max-width: 380px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+        }
+        .logo {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        .logo h1 { color: #ff6b35; font-size: 2rem; font-weight: 800; }
+        .logo p { color: #888; font-size: 0.9rem; }
+        .form-group { margin-bottom: 1.2rem; }
+        label { display: block; margin-bottom: 0.4rem; color: #333; font-weight: 600; font-size: 0.9rem; }
+        input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+            outline: none;
+        }
+        input:focus { border-color: #ff6b35; }
+        .btn {
+            width: 100%;
+            padding: 0.85rem;
+            background: #ff6b35;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            margin-top: 0.5rem;
+            transition: background 0.2s;
+        }
+        .btn:hover { background: #e55a25; }
+        .alert {
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+        }
+        .alert-danger { background: #fee2e2; color: #c0392b; border: 1px solid #fca5a5; }
+        .alert-success { background: #d1fae5; color: #065f46; border: 1px solid #6ee7b7; }
+        .hint { text-align: center; margin-top: 1.2rem; color: #aaa; font-size: 0.82rem; }
+    </style>
+</head>
+<body>
+<div class="card">
+    <div class="logo">
+        <h1>👨‍🍳 Junara</h1>
+        <p>Delivery - Painel Administrativo</p>
+    </div>
+
+    <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
+    <div th:if="${param.error}" class="alert alert-danger">Usuário ou senha inválidos.</div>
+    <div th:if="${param.blocked}" class="alert alert-danger">Muitas tentativas incorretas. Tente novamente em 15 minutos.</div>
+    <div th:if="${param.logout}" class="alert alert-success">Você saiu com sucesso.</div>
+
+    <form th:action="@{/login}" method="post">
+        <div class="form-group">
+            <label for="username">Usuário</label>
+            <input type="text" id="username" name="username" placeholder="Digite seu usuário" required autofocus/>
+        </div>
+        <div class="form-group">
+            <label for="password">Senha</label>
+            <input type="password" id="password" name="password" placeholder="Digite sua senha" required/>
+        </div>
+        <button type="submit" class="btn">Entrar</button>
+    </form>
+
+    <p class="hint">Acesso restrito ao painel administrativo</p>
+</div>
+</body>
+</html>

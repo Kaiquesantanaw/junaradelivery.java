@@ -5,6 +5,7 @@ import com.junaradelivery.junara.entity.User;
 import com.junaradelivery.junara.repository.ProdutoRepository;
 import com.junaradelivery.junara.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Component;
@@ -18,16 +19,19 @@ public class DataInitializer implements CommandLineRunner {
     @Autowired
     private ProdutoRepository produtoRepository;
 
+    @Value("${app.admin.password:admin123}")
+    private String adminPassword;
+
     @Override
     public void run(String... args) throws Exception {
         if (!userRepository.existsByUsername("admin")) {
             User admin = new User();
             admin.setUsername("admin");
-            admin.setPassword(new BCryptPasswordEncoder().encode("admin123"));
+            admin.setPassword(new BCryptPasswordEncoder().encode(adminPassword));
             admin.setRole("ADMIN");
             admin.setEnabled(Boolean.TRUE);
             userRepository.save(admin);
-            System.out.println("✅ Admin padrão criado: usuario=admin, senha=admin123");
+            System.out.println("✅ Admin criado com sucesso");
         }
 
         if (produtoRepository.count() == 0) {

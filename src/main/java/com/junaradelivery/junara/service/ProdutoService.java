@@ -44,6 +44,9 @@ public class ProdutoService {
         if (produtoAtualizado.getPreco() != null && produtoAtualizado.getPreco() > 0) {
             produto.setPreco(produtoAtualizado.getPreco());
         }
+        if (produtoAtualizado.getImagemUrl() != null) {
+            produto.setImagemUrl(produtoAtualizado.getImagemUrl());
+        }
         return produtoRepository.save(produto);
     }
 

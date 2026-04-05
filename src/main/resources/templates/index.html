@@ -1,0 +1,989 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="pt-BR">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Junara Delivery - Painel</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f5f5f5; }
+        nav {
+            background: #ff6b35;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+        nav h1 { color: white; font-size: 1.5rem; font-weight: 800; }
+        nav a {
+            color: white;
+            text-decoration: none;
+            margin-left: 1.5rem;
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+        nav a:hover { opacity: 0.8; }
+        .container { max-width: 1100px; margin: 2rem auto; padding: 0 1.5rem; }
+        h2 { color: #333; margin-bottom: 1.5rem; font-size: 1.4rem; }
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1.2rem;
+            margin-bottom: 2.5rem;
+        }
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.07);
+            text-align: center;
+        }
+        .card .icon { font-size: 2.5rem; margin-bottom: 0.7rem; }
+        .card .num { font-size: 2rem; font-weight: 800; color: #ff6b35; }
+        .card .label { color: #888; font-size: 0.9rem; margin-top: 0.3rem; }
+        .section {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.07);
+            margin-bottom: 1.5rem;
+        }
+        .section h3 { color: #333; margin-bottom: 1rem; font-size: 1.1rem; }
+        table { width: 100%; border-collapse: collapse; }
+        th { background: #fff5f0; color: #ff6b35; padding: 0.75rem; text-align: left; font-size: 0.85rem; }
+        td { padding: 0.75rem; border-bottom: 1px solid #f0f0f0; font-size: 0.9rem; color: #555; }
+        tr:last-child td { border-bottom: none; }
+        .badge {
+            display: inline-block;
+            padding: 0.2rem 0.7rem;
+            border-radius: 20px;
+            font-size: 0.78rem;
+            font-weight: 600;
+        }
+        .badge-PENDENTE   { background: #fef3c7; color: #92400e; }
+        .badge-CONFIRMADO { background: #dbeafe; color: #1e40af; }
+        .badge-ENVIADO    { background: #ede9fe; color: #5b21b6; }
+        .badge-ENTREGUE   { background: #d1fae5; color: #065f46; }
+        .badge-CANCELADO  { background: #fee2e2; color: #991b1b; }
+        .status-select {
+            padding: 0.25rem 0.5rem; border-radius: 8px;
+            border: 1.5px solid #e5e7eb; font-size: 0.82rem;
+            font-weight: 600; cursor: pointer; outline: none;
+        }
+        .status-select:focus { border-color: #2d6a4f; }
+        .auto-refresh-bar { font-size: 0.8rem; color: #aaa; }
+        /* Toast de feedback */
+        .toast-adm {
+            position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%) translateY(30px);
+            background: #2d6a4f; color: white; padding: 0.75rem 1.5rem; border-radius: 10px;
+            font-weight: 600; font-size: 0.95rem; box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+            z-index: 9999; opacity: 0; pointer-events: none;
+            transition: opacity 0.3s, transform 0.3s;
+        }
+        .toast-adm.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+        .toast-adm.erro { background: #c1121f; }
+        .btn-sm {
+            padding: 0.35rem 0.8rem;
+            background: #ff6b35;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.82rem;
+            cursor: pointer;
+            text-decoration: none;
+        }
+        .btn-sm-outline {
+            padding: 0.35rem 0.8rem;
+            background: white;
+            color: #ff6b35;
+            border: 1.5px solid #ff6b35;
+            border-radius: 6px;
+            font-size: 0.82rem;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .btn-sm-outline:hover { background: #fff5f0; }
+        /* Modal editar produto */
+        .modal-prod-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.45);
+            z-index: 600; display: flex; align-items: center; justify-content: center;
+            opacity: 0; pointer-events: none; transition: opacity 0.25s;
+        }
+        .modal-prod-overlay.open { opacity: 1; pointer-events: all; }
+        .modal-prod-box {
+            background: white; border-radius: 16px; padding: 1.75rem;
+            width: 500px; max-width: 97vw; max-height: 90vh; overflow-y: auto;
+            transform: scale(0.93); transition: transform 0.25s;
+        }
+        .modal-prod-overlay.open .modal-prod-box { transform: scale(1); }
+        .modal-prod-box h3 { font-size: 1.1rem; color: #1a1a1a; margin-bottom: 1.2rem; }
+        .modal-prod-box .form-group { margin-bottom: 0.9rem; }
+        .modal-prod-box .form-group label { font-size: 0.83rem; font-weight: 600; color: #555; display: block; margin-bottom: 0.25rem; }
+        .modal-prod-box .form-group input,
+        .modal-prod-box .form-group textarea {
+            width: 100%; padding: 0.55rem 0.8rem; border: 1.5px solid #e5e7eb;
+            border-radius: 8px; font-size: 0.9rem; font-family: inherit; outline: none;
+            transition: border-color 0.2s;
+        }
+        .modal-prod-box .form-group input:focus,
+        .modal-prod-box .form-group textarea:focus { border-color: #2d6a4f; }
+        .edit-img-current { display:flex; align-items:center; gap:0.7rem; background:#f9fafb; border-radius:8px; padding:0.5rem 0.75rem; margin-bottom:0.5rem; }
+        .edit-img-current img { width:52px; height:52px; object-fit:cover; border-radius:6px; border:1px solid #e5e7eb; }
+        .edit-img-current span { font-size:0.82rem; color:#6b7280; flex:1; }
+        /* Modal editar pedido */
+        .modal-edit-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.45);
+            z-index: 500; display: flex; align-items: center; justify-content: center;
+            opacity: 0; pointer-events: none; transition: opacity 0.25s;
+        }
+        .modal-edit-overlay.open { opacity: 1; pointer-events: all; }
+        .modal-edit-box {
+            background: white; border-radius: 16px; padding: 1.75rem;
+            width: 560px; max-width: 97vw; max-height: 90vh; overflow-y: auto;
+            transform: scale(0.93); transition: transform 0.25s;
+        }
+        .modal-edit-overlay.open .modal-edit-box { transform: scale(1); }
+        .modal-edit-box h3 { font-size: 1.1rem; color: #1a1a1a; margin-bottom: 1.2rem; }
+        .edit-item-row {
+            display: flex; align-items: center; gap: 0.7rem;
+            padding: 0.6rem 0; border-bottom: 1px solid #f5f5f5;
+        }
+        .edit-item-name { flex: 1; font-size: 0.9rem; font-weight: 600; color: #333; }
+        .edit-item-price { font-size: 0.82rem; color: #888; white-space: nowrap; }
+        .edit-qty-btn {
+            width: 28px; height: 28px; border-radius: 50%;
+            border: 2px solid #ff6b35; background: white; color: #ff6b35;
+            font-size: 1.1rem; font-weight: 700; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .edit-qty-btn:hover { background: #ff6b35; color: white; }
+        .edit-qty-num { min-width: 22px; text-align: center; font-weight: 700; font-size: 0.95rem; color: #333; }
+        .edit-remove-btn { background: none; border: none; color: #ccc; font-size: 1.1rem; cursor: pointer; }
+        .edit-remove-btn:hover { color: #ef4444; }
+        .add-item-row { display: flex; gap: 0.6rem; margin-top: 1rem; align-items: center; }
+        .add-item-row select {
+            flex: 1; padding: 0.5rem 0.75rem; border: 1.5px solid #e5e7eb;
+            border-radius: 9px; font-size: 0.88rem; outline: none; font-family: inherit;
+        }
+        .add-item-row select:focus { border-color: #ff6b35; }
+        .btn-add-item {
+            padding: 0.5rem 1rem; background: #ff6b35; color: white;
+            border: none; border-radius: 9px; font-weight: 700; font-size: 0.88rem; cursor: pointer;
+        }
+        .btn-add-item:hover { background: #e55a25; }
+        .edit-total { font-weight: 800; color: #ff6b35; font-size: 1.1rem; margin-top: 0.8rem; text-align: right; }
+        #msgEditPedido { font-size: 0.87rem; font-weight: 600; min-height: 1.1rem; margin-top: 0.3rem; }
+        .btn-primary {
+            padding: 0.55rem 1.3rem;
+            background: #ff6b35;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 0.5rem;
+        }
+        .btn-primary:hover { background: #e85c25; }
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+        .form-group { display: flex; flex-direction: column; gap: 0.3rem; }
+        .form-group label { font-size: 0.85rem; font-weight: 600; color: #555; }
+        .form-group input, .form-group textarea {
+            padding: 0.55rem 0.8rem;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-family: inherit;
+        }
+        .form-group input:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: #ff6b35;
+        }
+        .form-group.full { grid-column: 1 / -1; }
+        #msgProduto { margin-top: 0.7rem; font-size: 0.9rem; font-weight: 600; }
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        .section-header h3 { margin-bottom: 0; }
+        .toggle-form-btn {
+            padding: 0.35rem 1rem;
+            background: #ff6b35;
+            color: rgb(0, 88, 60);
+            border: none;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        #formCriarProduto { margin-top: 1.2rem; border-top: 1px solid #f0f0f0; padding-top: 1.2rem; }
+        .upload-area {
+            border: 2px dashed #d1fae5; border-radius: 10px;
+            padding: 1.2rem; text-align: center; cursor: pointer;
+            background: #f0fdf4; transition: border-color 0.2s, background 0.2s;
+            position: relative;
+        }
+        .upload-area:hover, .upload-area.drag { border-color: #2d6a4f; background: #dcfce7; }
+        .upload-area input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+        .upload-area .up-icon { font-size: 2rem; margin-bottom: 0.4rem; }
+        .upload-area p { font-size: 0.85rem; color: #6b7280; margin: 0; }
+        .upload-area p strong { color: #2d6a4f; }
+        .img-preview-wrap { margin-top: 0.75rem; display: none; align-items: center; gap: 0.75rem; background: #f9fafb; border-radius: 8px; padding: 0.5rem 0.75rem; }
+        .img-preview-wrap img { width: 60px; height: 60px; object-fit: cover; border-radius: 6px; border: 1px solid #e5e7eb; }
+        .img-preview-name { font-size: 0.82rem; color: #374151; flex: 1; word-break: break-all; }
+        .img-preview-remove { background: none; border: none; color: #9ca3af; font-size: 1.2rem; cursor: pointer; }
+        .img-preview-remove:hover { color: #c1121f; }
+        .nav-links { display: flex; align-items: center; }
+        form.logout { display: inline; }
+        form.logout button {
+            background: rgba(255,255,255,0.2);
+            color: rgb(255, 255, 255);
+            border: 1px solid rgba(4, 1, 1, 0.5);
+            padding: 0.4rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            margin-left: 1.5rem;
+        }
+        .btn-nav {
+            background: rgba(255,255,255,0.15);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.45);
+            padding: 0.4rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-left: 1rem;
+        }
+        .btn-nav:hover { background: rgba(255,255,255,0.28); }
+        /* Modal senha */
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.45);
+            z-index: 500; display: flex; align-items: center; justify-content: center;
+            opacity: 0; pointer-events: none; transition: opacity 0.25s;
+        }
+        .modal-overlay.open { opacity: 1; pointer-events: all; }
+        .modal-box {
+            background: white; border-radius: 16px; padding: 2rem;
+            width: 400px; max-width: 95vw;
+            transform: scale(0.93); transition: transform 0.25s;
+        }
+        .modal-overlay.open .modal-box { transform: scale(1); }
+        .modal-box h3 { font-size: 1.1rem; color: #1a1a1a; margin-bottom: 1.2rem; }
+        .modal-box .form-group { margin-bottom: 0.9rem; }
+        .modal-actions { display: flex; gap: 0.7rem; margin-top: 1.2rem; }
+        .btn-cancel-m { flex:1; padding:0.65rem; background:#f5f5f5; color:#555; border:none; border-radius:9px; font-size:0.95rem; font-weight:600; cursor:pointer; }
+        .btn-save-m   { flex:2; padding:0.65rem; background:#ff6b35; color:white; border:none; border-radius:9px; font-size:0.95rem; font-weight:700; cursor:pointer; }
+        .btn-save-m:hover { background:#e55a25; }
+        .btn-save-m:disabled { background:#ccc; cursor:not-allowed; }
+        #msgSenha { font-size:0.87rem; font-weight:600; min-height:1.1rem; margin-top:0.3rem; }
+    </style>
+</head>
+<body>
+<div id="toastAdm" class="toast-adm"></div>
+
+<nav>
+    <h1> Junara Delivery</h1>
+    <div class="nav-links">
+        <a href="/">Dashboard</a>
+        <a href="/shop">Cardápio</a>
+        <a href="/api/v1/produtos">API Produtos</a>
+        <a href="/api/v1/pedidos">API Pedidos</a>
+        <button class="btn-nav" onclick="abrirModalSenha()">🔑 Trocar Senha</button>
+        <form class="logout" th:action="@{/logout}" method="post">
+            <button type="submit">Sair</button>
+        </form>
+    </div>
+</nav>
+
+<div class="container">
+    <h2>Painel Administrativo</h2>
+
+    <div class="cards">
+        <div class="card">
+            <div class="icon">📦</div>
+            <div class="num" id="totalPedidos">-</div>
+            <div class="label">Pedidos</div>
+        </div>
+        <div class="card">
+            <div class="icon">🍽️</div>
+            <div class="num" id="totalProdutos">-</div>
+            <div class="label">Produtos</div>
+        </div>
+        <div class="card">
+            <div class="icon">👥</div>
+            <div class="num" id="totalClientes">-</div>
+            <div class="label">Clientes</div>
+        </div>
+        <div class="card">
+            <div class="icon">💰</div>
+            <div class="num" id="totalReceita">R$ -</div>
+            <div class="label">Receita Total</div>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-header">
+            <h3>📋 Pedidos</h3>
+            <span class="auto-refresh-bar" id="lastRefresh"></span>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Cliente</th>
+                    <th>Endereço</th>
+                    <th>Itens</th>
+                    <th>Total</th>
+                    <th>Status</th>
+                    <th>Data</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody id="tabelaPedidos">
+                <tr><td colspan="8" style="text-align:center;color:#aaa;">Carregando...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section">
+        <div class="section-header">
+            <h3>🍽️ Produtos Cadastrados</h3>
+            <button class="toggle-form-btn" onclick="toggleFormProduto()">+ Novo Produto</button>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nome</th>
+                    <th>Preço</th>
+                    <th>Descrição</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody id="tabelaProdutos">
+                <tr><td colspan="5" style="text-align:center;color:#aaa;">Carregando...</td></tr>
+            </tbody>
+        </table>
+
+        <div id="formCriarProduto" style="display:none;">
+            <h4 style="margin-bottom:1rem;color:#333;">Cadastrar Novo Produto</h4>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="prodNome">Nome *</label>
+                    <input type="text" id="prodNome" placeholder="Ex: Pizza Margherita" required/>
+                </div>
+                <div class="form-group">
+                    <label for="prodPreco">Preço (R$) *</label>
+                    <input type="number" id="prodPreco" placeholder="Ex: 39.90" step="0.01" min="0" required/>
+                </div>
+                <div class="form-group full">
+                    <label for="prodDescricao">Descrição</label>
+                    <textarea id="prodDescricao" rows="2" placeholder="Descreva o produto..."></textarea>
+                </div>
+                <div class="form-group full">
+                    <label>Imagem do Produto</label>
+                    <div class="upload-area" id="uploadArea">
+                        <input type="file" id="prodImagemFile" accept="image/*" onchange="onFileSelect(this)"/>
+                        <div class="up-icon">🖼️</div>
+                        <p>Clique ou arraste uma foto aqui<br/><strong>JPG, PNG, WEBP</strong> até 5 MB</p>
+                    </div>
+                    <div class="img-preview-wrap" id="imgPreviewWrap">
+                        <img id="imgPreviewImg" src="" alt="preview"/>
+                        <span class="img-preview-name" id="imgPreviewName"></span>
+                        <button class="img-preview-remove" onclick="removerImagem()" title="Remover">✕</button>
+                    </div>
+                    <input type="hidden" id="prodImagemUrl"/>
+                </div>
+            </div>
+            <button class="btn-primary" onclick="criarProduto()">Salvar Produto</button>
+            <div id="msgProduto"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+async function carregarDados() {
+    try {
+        const [pedidos, produtos] = await Promise.all([
+            fetch('/api/v1/pedidos').then(r => r.json()),
+            fetch('/api/v1/produtos').then(r => r.json())
+        ]);
+
+        document.getElementById('totalPedidos').textContent = pedidos.length;
+        document.getElementById('totalProdutos').textContent = produtos.length;
+
+        const receita = pedidos.reduce((sum, p) => sum + (p.valorTotal || 0), 0);
+        document.getElementById('totalReceita').textContent = 'R$ ' + receita.toFixed(2);
+
+        const clientes = new Set(pedidos.map(p => p.clienteId || p.cliente?.id)).size;
+        document.getElementById('totalClientes').textContent = clientes || 0;
+
+        const statusOpcoes = ['PENDENTE','CONFIRMADO','ENVIADO','ENTREGUE','CANCELADO'];
+
+        const tbPedidos = document.getElementById('tabelaPedidos');
+        if (pedidos.length === 0) {
+            tbPedidos.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#aaa;">Nenhum pedido ainda</td></tr>';
+        } else {
+            tbPedidos.innerHTML = pedidos.map(p => {
+                const nome = p.cliente?.nome || '-';
+                const endereco = p.cliente?.endereco || '-';
+                const itens = (p.itens || []).map(i => `${i.quantidade}x ${i.produto?.nome || '?'}`).join(', ') || '-';
+                const total = 'R$ ' + (p.valorTotal || 0).toFixed(2).replace('.', ',');
+                const status = p.status || 'PENDENTE';
+                const data = p.dataCriacao ? new Date(p.dataCriacao).toLocaleString('pt-BR', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '-';
+                const selectOpts = statusOpcoes.map(s =>
+                    `<option value="${s}" ${s === status ? 'selected' : ''}>${s}</option>`).join('');
+                return `<tr>
+                    <td><strong>#${p.id}</strong></td>
+                    <td>${nome}</td>
+                    <td style="font-size:0.82rem;max-width:160px;white-space:normal;color:#555">${endereco}</td>
+                    <td style="font-size:0.82rem;max-width:200px;white-space:normal">${itens}</td>
+                    <td>${total}</td>
+                    <td><select class="status-select" onchange="atualizarStatus(${p.id}, this.value)">${selectOpts}</select></td>
+                    <td style="font-size:0.82rem">${data}</td>
+                    <td><button class="btn-sm-outline" onclick="abrirEditarPedido(${p.id})">Editar</button> <button class="btn-sm" onclick="excluirPedido(${p.id})">Excluir</button></td>
+                </tr>`;
+            }).join('');
+        }
+
+        document.getElementById('lastRefresh').textContent =
+            'Atualizado: ' + new Date().toLocaleTimeString('pt-BR');
+
+        const tbProdutos = document.getElementById('tabelaProdutos');
+        if (produtos.length === 0) {
+            tbProdutos.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#aaa;">Nenhum produto ainda</td></tr>';
+        } else {
+            tbProdutos.innerHTML = produtos.map(p => `
+                <tr>
+                    <td>#${p.id}</td>
+                    <td>${p.nome}</td>
+                    <td>R$ ${(p.preco || 0).toFixed(2)}</td>
+                    <td>${p.descricao || '-'}</td>
+                    <td><button class="btn-sm-outline" onclick="abrirEditarProduto(${p.id})">Editar</button> <button class="btn-sm" onclick="excluirProduto(${p.id})">Excluir</button></td>
+                </tr>`).join('');
+        }
+    } catch (e) {
+        console.error('Erro ao carregar dados:', e);
+    }
+}
+
+carregarDados();
+
+function toggleFormProduto() {
+    const form = document.getElementById('formCriarProduto');
+    form.style.display = form.style.display === 'none' ? 'block' : 'none';
+}
+
+async function criarProduto() {
+    const nome = document.getElementById('prodNome').value.trim();
+    const preco = parseFloat(document.getElementById('prodPreco').value);
+    const descricao = document.getElementById('prodDescricao').value.trim();
+    const msg = document.getElementById('msgProduto');
+
+    if (!nome || isNaN(preco) || preco < 0) {
+        msg.style.color = '#dc2626';
+        msg.textContent = 'Preencha nome e preço válidos.';
+        return;
+    }
+
+    // Upload da imagem se arquivo selecionado
+    let imagemUrl = document.getElementById('prodImagemUrl').value.trim() || null;
+    const fileInput = document.getElementById('prodImagemFile');
+    if (fileInput.files && fileInput.files[0]) {
+        const file = fileInput.files[0];
+        if (file.size > 5 * 1024 * 1024) {
+            msg.style.color = '#dc2626';
+            msg.textContent = 'Imagem muito grande (máx. 5 MB).';
+            return;
+        }
+        msg.style.color = '#2d6a4f';
+        msg.textContent = 'Enviando imagem...';
+        const formData = new FormData();
+        formData.append('file', file);
+        try {
+            const upRes = await fetch('/api/v1/produtos/upload', { method: 'POST', body: formData });
+            if (!upRes.ok) {
+                msg.style.color = '#dc2626';
+                msg.textContent = 'Falha no upload da imagem.';
+                return;
+            }
+            imagemUrl = await upRes.text();
+        } catch (e) {
+            msg.style.color = '#dc2626';
+            msg.textContent = 'Erro ao enviar imagem.';
+            return;
+        }
+    }
+
+    const produto = { nome, preco, descricao: descricao || null, imagemUrl };
+
+    try {
+        const res = await fetch('/api/v1/produtos', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(produto)
+        });
+        if (res.ok) {
+            msg.style.color = '#065f46';
+            msg.textContent = 'Produto criado com sucesso!';
+            document.getElementById('prodNome').value = '';
+            document.getElementById('prodPreco').value = '';
+            document.getElementById('prodDescricao').value = '';
+            removerImagem();
+            carregarDados();
+        } else {
+            msg.style.color = '#dc2626';
+            msg.textContent = 'Erro ao criar produto.';
+        }
+    } catch (e) {
+        msg.style.color = '#dc2626';
+        msg.textContent = 'Erro de conexão.';
+    }
+}
+
+function onFileSelect(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+        document.getElementById('imgPreviewImg').src = e.target.result;
+        document.getElementById('imgPreviewName').textContent = file.name;
+        document.getElementById('imgPreviewWrap').style.display = 'flex';
+        document.getElementById('uploadArea').querySelector('div').style.display = 'none';
+        document.getElementById('uploadArea').querySelector('p').style.display = 'none';
+    };
+    reader.readAsDataURL(file);
+}
+
+function removerImagem() {
+    document.getElementById('prodImagemFile').value = '';
+    document.getElementById('prodImagemUrl').value = '';
+    document.getElementById('imgPreviewWrap').style.display = 'none';
+    const area = document.getElementById('uploadArea');
+    area.querySelector('div').style.display = '';
+    area.querySelector('p').style.display = '';
+}
+
+async function excluirProduto(id) {
+    if (!confirm('Deseja excluir este produto?')) return;
+    try {
+        await fetch('/api/v1/produtos/' + id, { method: 'DELETE' });
+        carregarDados();
+    } catch (e) {
+        alert('Erro ao excluir produto.');
+    }
+}
+
+async function atualizarStatus(id, status) {
+    // pausa o auto-refresh para evitar race condition
+    clearInterval(_refreshTimer);
+    try {
+        const res = await fetch(`/api/v1/pedidos/${id}/status?status=${status}`, { method: 'PATCH' });
+        if (!res.ok) {
+            _mostrarToast('Erro ao atualizar status (' + res.status + ')', true);
+        } else {
+            _mostrarToast('✅ Status atualizado!');
+        }
+        await carregarDados();
+    } catch (e) {
+        _mostrarToast('Erro de conexão.', true);
+    } finally {
+        // reinicia o auto-refresh
+        _refreshTimer = setInterval(carregarDados, 30000);
+    }
+}
+
+async function excluirPedido(id) {
+    if (!confirm('Deseja excluir este pedido?')) return;
+    try {
+        await fetch('/api/v1/pedidos/' + id, { method: 'DELETE' });
+        carregarDados();
+    } catch (e) {
+        alert('Erro ao excluir pedido.');
+    }
+}
+
+// Auto-refresh a cada 30 segundos
+let _refreshTimer = setInterval(carregarDados, 30000);
+
+function _mostrarToast(msg, erro) {
+    const t = document.getElementById('toastAdm');
+    t.textContent = msg;
+    t.classList.toggle('erro', !!erro);
+    t.classList.add('show');
+    clearTimeout(t._timer);
+    t._timer = setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// ── Editar Pedido ────────────────────────────────────────────
+let editPedidoId = null;
+let editItens = []; // [{produtoId, nome, preco, quantidade}]
+let todosOsProdutos = [];
+
+async function abrirEditarPedido(id) {
+    editPedidoId = id;
+    document.getElementById('msgEditPedido').textContent = '';
+    document.getElementById('editPedidoTitle').textContent = '✏️ Editar Pedido #' + id;
+
+    const [pedido, produtos] = await Promise.all([
+        fetch('/api/v1/pedidos/' + id).then(r => r.json()),
+        fetch('/api/v1/produtos').then(r => r.json())
+    ]);
+
+    todosOsProdutos = produtos;
+    editItens = (pedido.itens || []).map(i => ({
+        produtoId: i.produto.id,
+        nome: i.produto.nome,
+        preco: i.precoUnitario,
+        quantidade: i.quantidade
+    }));
+
+    preencherSelectProdutos();
+    renderEditItens();
+    document.getElementById('modalEditPedido').classList.add('open');
+}
+
+function fecharEditarPedido() {
+    document.getElementById('modalEditPedido').classList.remove('open');
+}
+
+function preencherSelectProdutos() {
+    const sel = document.getElementById('selectAddProduto');
+    sel.innerHTML = todosOsProdutos.map(p =>
+        `<option value="${p.id}" data-nome="${p.nome}" data-preco="${p.preco}">${p.nome} — R$ ${(p.preco||0).toFixed(2).replace('.',',')}</option>`
+    ).join('');
+}
+
+function renderEditItens() {
+    const container = document.getElementById('editItensList');
+    if (!editItens.length) {
+        container.innerHTML = '<p style="color:#aaa;font-size:.85rem;padding:.5rem 0">Nenhum item. Adicione produtos abaixo.</p>';
+    } else {
+        container.innerHTML = editItens.map((it, idx) => `
+            <div class="edit-item-row">
+                <div class="edit-item-name">${it.nome}</div>
+                <div class="edit-item-price">R$ ${(it.preco * it.quantidade).toFixed(2).replace('.',',')}</div>
+                <button class="edit-qty-btn" onclick="editQty(${idx},-1)">−</button>
+                <span class="edit-qty-num">${it.quantidade}</span>
+                <button class="edit-qty-btn" onclick="editQty(${idx},1)">+</button>
+                <button class="edit-remove-btn" onclick="editRemove(${idx})" title="Remover">🗑</button>
+            </div>`).join('');
+    }
+    const total = editItens.reduce((s, i) => s + i.preco * i.quantidade, 0);
+    document.getElementById('editTotal').textContent = 'Total: R$ ' + total.toFixed(2).replace('.',',');
+}
+
+function editQty(idx, delta) {
+    editItens[idx].quantidade += delta;
+    if (editItens[idx].quantidade <= 0) editItens.splice(idx, 1);
+    renderEditItens();
+}
+
+function editRemove(idx) {
+    editItens.splice(idx, 1);
+    renderEditItens();
+}
+
+function editAddProduto() {
+    const sel = document.getElementById('selectAddProduto');
+    const opt = sel.selectedOptions[0];
+    if (!opt) return;
+    const produtoId = parseInt(opt.value);
+    const existente = editItens.find(i => i.produtoId === produtoId);
+    if (existente) {
+        existente.quantidade++;
+    } else {
+        editItens.push({
+            produtoId,
+            nome: opt.dataset.nome,
+            preco: parseFloat(opt.dataset.preco),
+            quantidade: 1
+        });
+    }
+    renderEditItens();
+}
+
+async function salvarEditPedido() {
+    const msg = document.getElementById('msgEditPedido');
+    const btn = document.getElementById('btnSalvarEditPedido');
+    msg.textContent = '';
+
+    if (!editItens.length) {
+        msg.style.color = '#dc2626'; msg.textContent = 'Adicione pelo menos um item.'; return;
+    }
+
+    btn.disabled = true; btn.textContent = 'Salvando...';
+    try {
+        const res = await fetch('/api/v1/pedidos/' + editPedidoId + '/itens', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                clienteId: null,
+                produtoIds: editItens.map(i => ({ produtoId: i.produtoId, quantidade: i.quantidade }))
+            })
+        });
+        if (res.ok) {
+            fecharEditarPedido();
+            carregarDados();
+        } else {
+            msg.style.color = '#dc2626'; msg.textContent = 'Erro ao salvar pedido.';
+        }
+    } catch {
+        msg.style.color = '#dc2626'; msg.textContent = 'Erro de conexão.';
+    } finally {
+        btn.disabled = false; btn.textContent = 'Salvar Alterações';
+    }
+}
+
+// ── Editar Produto ────────────────────────────────────────────
+let _editProdutoId = null;
+
+async function abrirEditarProduto(id) {
+    _editProdutoId = id;
+    document.getElementById('msgEditProduto').textContent = '';
+    document.getElementById('editProdNome').value = '';
+    document.getElementById('editProdPreco').value = '';
+    document.getElementById('editProdDescricao').value = '';
+    document.getElementById('editProdImagemUrl').value = '';
+    document.getElementById('editProdFile').value = '';
+    document.getElementById('editImgCurrentWrap').style.display = 'none';
+    document.getElementById('editImgPreviewWrap').style.display = 'none';
+    document.getElementById('editUploadArea').querySelector('div').style.display = '';
+    document.getElementById('editUploadArea').querySelector('p').style.display = '';
+
+    try {
+        const p = await fetch('/api/v1/produtos/' + id).then(r => r.json());
+        document.getElementById('editProdNome').value = p.nome || '';
+        document.getElementById('editProdPreco').value = p.preco || '';
+        document.getElementById('editProdDescricao').value = p.descricao || '';
+        if (p.imagemUrl) {
+            document.getElementById('editProdImagemUrl').value = p.imagemUrl;
+            const img = document.getElementById('editImgCurrentImg');
+            img.src = p.imagemUrl;
+            img.onerror = () => { img.style.display='none'; };
+            document.getElementById('editImgCurrentWrap').style.display = 'flex';
+        }
+        document.getElementById('modalEditProduto').classList.add('open');
+    } catch(e) {
+        _mostrarToast('Erro ao carregar produto.', true);
+    }
+}
+
+function fecharEditarProduto() {
+    document.getElementById('modalEditProduto').classList.remove('open');
+}
+
+function onEditFileSelect(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+        document.getElementById('editImgPreviewImg').src = e.target.result;
+        document.getElementById('editImgPreviewName').textContent = file.name;
+        document.getElementById('editImgPreviewWrap').style.display = 'flex';
+        document.getElementById('editImgCurrentWrap').style.display = 'none';
+        document.getElementById('editUploadArea').querySelector('div').style.display = 'none';
+        document.getElementById('editUploadArea').querySelector('p').style.display = 'none';
+    };
+    reader.readAsDataURL(file);
+}
+
+function removerEditImagem() {
+    document.getElementById('editProdFile').value = '';
+    document.getElementById('editImgPreviewWrap').style.display = 'none';
+    document.getElementById('editUploadArea').querySelector('div').style.display = '';
+    document.getElementById('editUploadArea').querySelector('p').style.display = '';
+}
+
+async function salvarEditProduto() {
+    const nome = document.getElementById('editProdNome').value.trim();
+    const preco = parseFloat(document.getElementById('editProdPreco').value);
+    const descricao = document.getElementById('editProdDescricao').value.trim();
+    const msg = document.getElementById('msgEditProduto');
+    const btn = document.getElementById('btnSalvarEditProduto');
+
+    if (!nome || isNaN(preco) || preco < 0) {
+        msg.style.color = '#dc2626'; msg.textContent = 'Preencha nome e preço válidos.'; return;
+    }
+
+    let imagemUrl = document.getElementById('editProdImagemUrl').value.trim() || null;
+    const fileInput = document.getElementById('editProdFile');
+    if (fileInput.files && fileInput.files[0]) {
+        const file = fileInput.files[0];
+        if (file.size > 5 * 1024 * 1024) {
+            msg.style.color = '#dc2626'; msg.textContent = 'Imagem muito grande (máx. 5 MB).'; return;
+        }
+        msg.style.color = '#2d6a4f'; msg.textContent = 'Enviando imagem...';
+        const fd = new FormData();
+        fd.append('file', file);
+        try {
+            const up = await fetch('/api/v1/produtos/upload', { method: 'POST', body: fd });
+            if (!up.ok) { msg.style.color = '#dc2626'; msg.textContent = 'Falha no upload.'; return; }
+            imagemUrl = await up.text();
+        } catch { msg.style.color = '#dc2626'; msg.textContent = 'Erro ao enviar imagem.'; return; }
+    }
+
+    btn.disabled = true; btn.textContent = 'Salvando...';
+    try {
+        const res = await fetch('/api/v1/produtos/' + _editProdutoId, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ nome, preco, descricao: descricao || null, imagemUrl })
+        });
+        if (res.ok) {
+            fecharEditarProduto();
+            _mostrarToast('✅ Produto atualizado!');
+            carregarDados();
+        } else {
+            msg.style.color = '#dc2626'; msg.textContent = 'Erro ao salvar produto.';
+        }
+    } catch { msg.style.color = '#dc2626'; msg.textContent = 'Erro de conexão.'; }
+    finally { btn.disabled = false; btn.textContent = 'Salvar Alterações'; }
+}
+
+// ── Trocar Senha
+function abrirModalSenha() {
+    document.getElementById('senhaAtual').value = '';
+    document.getElementById('novaSenha').value = '';
+    document.getElementById('confirmarSenha').value = '';
+    document.getElementById('msgSenha').textContent = '';
+    document.getElementById('modalSenha').classList.add('open');
+}
+function fecharModalSenha() {
+    document.getElementById('modalSenha').classList.remove('open');
+}
+
+async function salvarSenha() {
+    const senhaAtual    = document.getElementById('senhaAtual').value;
+    const novaSenha     = document.getElementById('novaSenha').value;
+    const confirmar     = document.getElementById('confirmarSenha').value;
+    const msg           = document.getElementById('msgSenha');
+    const btn           = document.getElementById('btnSalvarSenha');
+
+    msg.textContent = '';
+    if (!senhaAtual || !novaSenha) {
+        msg.style.color = '#dc2626'; msg.textContent = 'Preencha todos os campos.'; return;
+    }
+    if (novaSenha.length < 6) {
+        msg.style.color = '#dc2626'; msg.textContent = 'A nova senha deve ter pelo menos 6 caracteres.'; return;
+    }
+    if (novaSenha !== confirmar) {
+        msg.style.color = '#dc2626'; msg.textContent = 'A confirmação não confere.'; return;
+    }
+
+    btn.disabled = true; btn.textContent = 'Salvando...';
+    try {
+        const res = await fetch('/api/v1/users/change-password', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ senhaAtual, novaSenha })
+        });
+        const data = await res.json();
+        if (res.ok) {
+            msg.style.color = '#065f46'; msg.textContent = '✅ ' + data.mensagem;
+            setTimeout(fecharModalSenha, 1500);
+        } else {
+            msg.style.color = '#dc2626'; msg.textContent = '❌ ' + (data.erro || 'Erro ao alterar senha.');
+        }
+    } catch {
+        msg.style.color = '#dc2626'; msg.textContent = 'Erro de conexão.';
+    } finally {
+        btn.disabled = false; btn.textContent = 'Salvar Senha';
+    }
+}
+</script>
+
+<!-- Modal Editar Produto -->
+<div class="modal-prod-overlay" id="modalEditProduto" onclick="if(event.target===this)fecharEditarProduto()">
+    <div class="modal-prod-box">
+        <h3>✏️ Editar Produto</h3>
+        <div class="form-group">
+            <label>Nome *</label>
+            <input type="text" id="editProdNome" placeholder="Nome do produto"/>
+        </div>
+        <div class="form-group">
+            <label>Preço (R$) *</label>
+            <input type="number" id="editProdPreco" placeholder="Ex: 39.90" step="0.01" min="0"/>
+        </div>
+        <div class="form-group">
+            <label>Descrição</label>
+            <textarea id="editProdDescricao" rows="2" placeholder="Descrição do produto..."></textarea>
+        </div>
+        <div class="form-group">
+            <label>Imagem</label>
+            <div class="edit-img-current" id="editImgCurrentWrap" style="display:none">
+                <img id="editImgCurrentImg" src="" alt="atual"/>
+                <span>Imagem atual</span>
+            </div>
+            <div class="upload-area" id="editUploadArea">
+                <input type="file" id="editProdFile" accept="image/*" onchange="onEditFileSelect(this)"/>
+                <div class="up-icon">🖼️</div>
+                <p>Clique para trocar a foto<br/><strong>JPG, PNG, WEBP</strong> até 5 MB</p>
+            </div>
+            <div class="img-preview-wrap" id="editImgPreviewWrap" style="display:none">
+                <img id="editImgPreviewImg" src="" alt="preview"/>
+                <span class="img-preview-name" id="editImgPreviewName"></span>
+                <button class="img-preview-remove" onclick="removerEditImagem()" title="Remover">✕</button>
+            </div>
+            <input type="hidden" id="editProdImagemUrl"/>
+        </div>
+        <div id="msgEditProduto" style="font-size:0.87rem;font-weight:600;min-height:1.1rem;margin-top:0.3rem;"></div>
+        <div class="modal-actions" style="margin-top:1.2rem;">
+            <button class="btn-cancel-m" onclick="fecharEditarProduto()">Cancelar</button>
+            <button class="btn-save-m" id="btnSalvarEditProduto" onclick="salvarEditProduto()">Salvar Alterações</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Trocar Senha -->
+<div class="modal-overlay" id="modalSenha" onclick="if(event.target===this)fecharModalSenha()">
+    <div class="modal-box">
+        <h3>🔑 Trocar Senha</h3>
+        <div class="form-group">
+            <label class="form-group"><span style="font-size:.85rem;font-weight:600;color:#555">Senha Atual *</span>
+            <input type="password" id="senhaAtual" placeholder="Senha atual"/></label>
+        </div>
+        <div class="form-group">
+            <label class="form-group"><span style="font-size:.85rem;font-weight:600;color:#555">Nova Senha * (mín. 6 caracteres)</span>
+            <input type="password" id="novaSenha" placeholder="Nova senha"/></label>
+        </div>
+        <div class="form-group">
+            <label class="form-group"><span style="font-size:.85rem;font-weight:600;color:#555">Confirmar Nova Senha *</span>
+            <input type="password" id="confirmarSenha" placeholder="Repita a nova senha"/></label>
+        </div>
+        <div id="msgSenha"></div>
+        <div class="modal-actions">
+            <button class="btn-cancel-m" onclick="fecharModalSenha()">Cancelar</button>
+            <button class="btn-save-m" id="btnSalvarSenha" onclick="salvarSenha()">Salvar Senha</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Editar Pedido -->
+<div class="modal-edit-overlay" id="modalEditPedido" onclick="if(event.target===this)fecharEditarPedido()">
+    <div class="modal-edit-box">
+        <h3 id="editPedidoTitle">✏️ Editar Pedido</h3>
+        <div id="editItensList"></div>
+        <div class="add-item-row">
+            <select id="selectAddProduto"></select>
+            <button class="btn-add-item" onclick="editAddProduto()">+ Adicionar</button>
+        </div>
+        <div class="edit-total" id="editTotal">Total: R$ 0,00</div>
+        <div id="msgEditPedido"></div>
+        <div class="modal-actions" style="margin-top:1.2rem;">
+            <button class="btn-cancel-m" onclick="fecharEditarPedido()">Cancelar</button>
+            <button class="btn-save-m" id="btnSalvarEditPedido" onclick="salvarEditPedido()">Salvar Alterações</button>
+        </div>
+    </div>
+</div>
+</body>
+</html>

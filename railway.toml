@@ -1,0 +1,10 @@
+[build]
+builder = "dockerfile"
+
+[deploy]
+startCommand = "java -Djava.security.egd=file:/dev/./urandom -Dspring.profiles.active=prod -jar app.jar"
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 3
+
+[[deploy.healthcheckPath]]
+path = "/login"

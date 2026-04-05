@@ -2,45 +2,84 @@ package com.junaradelivery.junara.service;
 
 import com.junaradelivery.junara.dto.CreatePedidoRequest;
 import com.junaradelivery.junara.entity.Pedido;
+import com.junaradelivery.junara.entity.PedidoItem;
 import com.junaradelivery.junara.entity.Produto;
 import com.junaradelivery.junara.exception.ResourceNotFoundException;
 import com.junaradelivery.junara.model.Cliente;
+import com.junaradelivery.junara.repository.PedidoItemRepository;
 import com.junaradelivery.junara.repository.PedidoRepository;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class PedidoService {
 
     private final PedidoRepository pedidoRepository;
+    private final PedidoItemRepository pedidoItemRepository;
     private final ClienteService clienteService;
     private final ProdutoService produtoService;
 
+    @Transactional
     public Pedido salvarPedido(Pedido pedido) {
         return pedidoRepository.save(pedido);
     }
 
+    @Transactional
     public Pedido criarPedidoComDTO(CreatePedidoRequest request) {
         Cliente cliente = clienteService.obterClientePorId(request.getClienteId());
 
-        List<Produto> produtos = request.getProdutoIds().stream()
-                .map(p -> produtoService.obterProdutoPorId(p.getProdutoId()))
-                .collect(Collectors.toList());
-
-        double valorTotal = produtos.stream()
-                .mapToDouble(Produto::getPreco)
-                .sum();
-
         Pedido pedido = Pedido.builder()
                 .cliente(cliente)
-                .produtos(produtos)
-                .valorTotal(valorTotal)
                 .build();
+        pedidoRepository.save(pedido);
 
+        for (CreatePedidoRequest.ProdutoQuantidadeDTO p : request.getProdutoIds()) {
+            Produto produto = produtoService.obterProdutoPorId(p.getProdutoId());
+            int qty = p.getQuantidade() != null && p.getQuantidade() > 0 ? p.getQuantidade() : 1;
+            PedidoItem item = PedidoItem.builder()
+                    .pedido(pedido)
+                    .produto(produto)
+                    .quantidade(qty)
+                    .precoUnitario(produto.getPreco())
+                    .build();
+            pedido.getItens().add(item);
+        }
+
+        pedido.recalcularTotal();
+        return pedidoRepository.save(pedido);
+    }
+
+    @Transactional
+    public Pedido adicionarProduto(Long pedidoId, Long produtoId, int quantidade) {
+        Pedido pedido = obterPedidoPorId(pedidoId);
+        Produto produto = produtoService.obterProdutoPorId(produtoId);
+
+        pedidoItemRepository.findByPedidoIdAndProdutoId(pedidoId, produtoId)
+                .ifPresentOrElse(
+                        item -> item.setQuantidade(item.getQuantidade() + quantidade),
+                        () -> pedido.getItens().add(PedidoItem.builder()
+                                .pedido(pedido)
+                                .produto(produto)
+                                .quantidade(quantidade)
+                                .precoUnitario(produto.getPreco())
+                                .build()));
+
+        pedido.recalcularTotal();
+        pedido.setDataAtualizacao(LocalDateTime.now());
+        return pedidoRepository.save(pedido);
+    }
+
+    @Transactional
+    public Pedido removerProduto(Long pedidoId, Long produtoId) {
+        Pedido pedido = obterPedidoPorId(pedidoId);
+        pedido.getItens().removeIf(item -> item.getProduto().getId().equals(produtoId));
+        pedido.recalcularTotal();
+        pedido.setDataAtualizacao(LocalDateTime.now());
         return pedidoRepository.save(pedido);
     }
 
@@ -62,20 +101,54 @@ public class PedidoService {
         return pedidoRepository.findByStatus(statusEnum);
     }
 
+    @Transactional
     public Pedido atualizarPedido(Long id, Pedido pedidoAtualizado) {
         Pedido pedido = obterPedidoPorId(id);
         if (pedidoAtualizado.getStatus() != null) {
             pedido.setStatus(pedidoAtualizado.getStatus());
         }
-        if (pedidoAtualizado.getProdutos() != null) {
-            pedido.setProdutos(pedidoAtualizado.getProdutos());
-        }
-        if (pedidoAtualizado.getValorTotal() != null) {
-            pedido.setValorTotal(pedidoAtualizado.getValorTotal());
-        }
+        pedido.setDataAtualizacao(LocalDateTime.now());
         return pedidoRepository.save(pedido);
     }
 
+    @Transactional
+    public Pedido editarItens(Long id, CreatePedidoRequest request) {
+        Pedido pedido = obterPedidoPorId(id);
+
+        // troca cliente se informado
+        if (request.getClienteId() != null) {
+            pedido.setCliente(clienteService.obterClientePorId(request.getClienteId()));
+        }
+
+        // substitui todos os itens
+        pedido.getItens().clear();
+        pedidoRepository.save(pedido); // flush orphans
+
+        for (CreatePedidoRequest.ProdutoQuantidadeDTO p : request.getProdutoIds()) {
+            Produto produto = produtoService.obterProdutoPorId(p.getProdutoId());
+            int qty = p.getQuantidade() != null && p.getQuantidade() > 0 ? p.getQuantidade() : 1;
+            pedido.getItens().add(PedidoItem.builder()
+                    .pedido(pedido)
+                    .produto(produto)
+                    .quantidade(qty)
+                    .precoUnitario(produto.getPreco())
+                    .build());
+        }
+
+        pedido.recalcularTotal();
+        pedido.setDataAtualizacao(LocalDateTime.now());
+        return pedidoRepository.save(pedido);
+    }
+
+    @Transactional
+    public Pedido atualizarStatus(Long id, String status) {
+        Pedido pedido = obterPedidoPorId(id);
+        pedido.setStatus(Pedido.StatusPedido.valueOf(status.toUpperCase()));
+        pedido.setDataAtualizacao(LocalDateTime.now());
+        return pedidoRepository.save(pedido);
+    }
+
+    @Transactional
     public void excluirPedido(Long id) {
         obterPedidoPorId(id);
         pedidoRepository.deleteById(id);

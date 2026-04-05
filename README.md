@@ -288,7 +288,7 @@ Closed Source - Propriedade de Junara Delivery
 
 ## 👨‍💻 Desenvolvido por
 
-GitHub: [kaiquesantanaw](https://github.com/kaiquesantanaw)
+Junara Delivery
 
 ---
 

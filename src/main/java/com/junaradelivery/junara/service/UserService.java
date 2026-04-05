@@ -55,4 +55,16 @@ public class UserService implements UserDetailsService {
         return userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException(username));
     }
+
+    public void changePassword(String username, String senhaAtual, String novaSenha) {
+        User user = findByUsername(username);
+        if (!passwordEncoder.matches(senhaAtual, user.getPassword())) {
+            throw new IllegalArgumentException("Senha atual incorreta");
+        }
+        if (novaSenha == null || novaSenha.length() < 6) {
+            throw new IllegalArgumentException("A nova senha deve ter pelo menos 6 caracteres");
+        }
+        user.setPassword(passwordEncoder.encode(novaSenha));
+        userRepository.save(user);
+    }
 }

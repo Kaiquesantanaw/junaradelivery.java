@@ -31,8 +31,7 @@ public class PedidoController {
 
     @GetMapping
     public ResponseEntity<List<Pedido>> listarPedidos() {
-        List<Pedido> pedidos = pedidoService.listarPedidos();
-        return ResponseEntity.ok(pedidos);
+        return ResponseEntity.ok(pedidoService.listarPedidos());
     }
 
     @GetMapping("/{id}")
@@ -50,10 +49,38 @@ public class PedidoController {
         return ResponseEntity.ok(pedidoService.obterPedidosPorStatus(status));
     }
 
+    @PostMapping("/{id}/produtos")
+    public ResponseEntity<Pedido> adicionarProduto(
+            @PathVariable Long id,
+            @RequestParam Long produtoId,
+            @RequestParam(defaultValue = "1") int quantidade) {
+        return ResponseEntity.ok(pedidoService.adicionarProduto(id, produtoId, quantidade));
+    }
+
+    @DeleteMapping("/{id}/produtos/{produtoId}")
+    public ResponseEntity<Pedido> removerProduto(
+            @PathVariable Long id,
+            @PathVariable Long produtoId) {
+        return ResponseEntity.ok(pedidoService.removerProduto(id, produtoId));
+    }
+
     @PutMapping("/{id}")
     public ResponseEntity<Pedido> atualizarPedido(@PathVariable Long id, @RequestBody Pedido pedido) {
-        Pedido pedidoAtualizado = pedidoService.atualizarPedido(id, pedido);
-        return ResponseEntity.ok(pedidoAtualizado);
+        return ResponseEntity.ok(pedidoService.atualizarPedido(id, pedido));
+    }
+
+    @PutMapping("/{id}/itens")
+    public ResponseEntity<Pedido> editarItens(
+            @PathVariable Long id,
+            @RequestBody CreatePedidoRequest request) {
+        return ResponseEntity.ok(pedidoService.editarItens(id, request));
+    }
+
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<Pedido> atualizarStatus(
+            @PathVariable Long id,
+            @RequestParam String status) {
+        return ResponseEntity.ok(pedidoService.atualizarStatus(id, status));
     }
 
     @DeleteMapping("/{id}")
