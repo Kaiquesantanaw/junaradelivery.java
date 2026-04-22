@@ -34,6 +34,7 @@ jobs:
         run: |
           mkdir -p _site
           cp src/main/resources/templates/shop.html _site/index.html
+          # Ajusta links/URLs para execução estática no GitHub Pages.
           python - <<'PY'
           import os
           import re

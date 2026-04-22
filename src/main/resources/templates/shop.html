@@ -353,13 +353,13 @@
     let cart = [];
     let produtos = [];
     let tabAtiva = 'existente';
-    const runtimeApiBase = typeof window.__JUNARA_API_BASE_URL__ === 'string'
+    const injectedApiBaseUrl = typeof window.__JUNARA_API_BASE_URL__ === 'string'
         ? window.__JUNARA_API_BASE_URL__
         : '';
-    const queryApi = new URLSearchParams(window.location.search).get('api');
-    const API_BASE_URL = (queryApi
-        ? queryApi
-        : (window.location.hostname.endsWith('github.io') ? runtimeApiBase : '')
+    const apiOverrideFromQuery = new URLSearchParams(window.location.search).get('api');
+    const API_BASE_URL = (apiOverrideFromQuery
+        ? apiOverrideFromQuery
+        : (window.location.hostname.endsWith('github.io') ? injectedApiBaseUrl : '')
     ).replace(/\/+$/, '');
     const buildApiUrl = (path) => `${API_BASE_URL}${path}`;
 
