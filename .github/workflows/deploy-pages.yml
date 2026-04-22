@@ -36,6 +36,7 @@ jobs:
           cp src/main/resources/templates/shop.html _site/index.html
           python - <<'PY'
           import os
+          import re
           from pathlib import Path
 
           page = Path("_site/index.html")
@@ -47,13 +48,19 @@ jobs:
               f'<a href="{backend_url}/admin" target="_blank" rel="noopener">Dashboard</a>',
           )
           html = html.replace('<a href="/shop">Cardápio</a>', '<a href="./">Cardápio</a>')
-          html = html.replace(
-              '<form class="logout" th:action="@{/logout}" method="post">\n            <button type="submit">Sair</button>\n        </form>',
+          html = re.sub(
+              r'<form class="logout" th:action="@\{/logout\}" method="post">\s*<button type="submit">Sair</button>\s*</form>',
               f'<a href="{backend_url}/admin" target="_blank" rel="noopener">Admin</a>',
+              html,
+          )
+          html = html.replace(
+              '</head>',
+              f'    <script>window.__JUNARA_API_BASE_URL__ = "{backend_url}";</script>\n</head>',
           )
 
           page.write_text(html, encoding="utf-8")
           PY
+          # Evita processamento pelo Jekyll e garante publicação exata dos arquivos estáticos.
           touch _site/.nojekyll
 
       - name: Configure GitHub Pages

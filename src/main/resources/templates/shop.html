@@ -353,11 +353,13 @@
     let cart = [];
     let produtos = [];
     let tabAtiva = 'existente';
-    const DEFAULT_API_BASE_URL = 'https://junaradeliveryjava-production.up.railway.app';
+    const runtimeApiBase = typeof window.__JUNARA_API_BASE_URL__ === 'string'
+        ? window.__JUNARA_API_BASE_URL__
+        : '';
     const queryApi = new URLSearchParams(window.location.search).get('api');
     const API_BASE_URL = (queryApi
         ? queryApi
-        : (window.location.hostname.endsWith('github.io') ? DEFAULT_API_BASE_URL : '')
+        : (window.location.hostname.endsWith('github.io') ? runtimeApiBase : '')
     ).replace(/\/+$/, '');
     const buildApiUrl = (path) => `${API_BASE_URL}${path}`;
 
