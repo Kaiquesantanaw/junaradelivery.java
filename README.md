@@ -216,6 +216,23 @@ mvn spring-boot:run -Dspring-boot.run.arguments="--spring.profiles.active=prod"
 
 ## 🚀 Deploy
 
+### **GitHub Pages (Cardápio público)**
+- O workflow `.github/workflows/deploy-pages.yml` publica automaticamente o `shop.html` no GitHub Pages ao fazer push na `main`.
+- URL final: `https://<seu-usuario>.github.io/junaradelivery.java/`
+- A página publicada usa por padrão a API em:
+  `https://junaradeliveryjava-production.up.railway.app`
+- Para trocar a API sem editar código, adicione `?api=<url-backend>` na URL da página.
+
+> Exemplo:
+> `https://<seu-usuario>.github.io/junaradelivery.java/?api=https://seu-backend.com`
+
+#### Backend (CORS) para GitHub Pages
+No backend em produção, configure `CORS_ALLOWED_ORIGINS` com os domínios permitidos (separados por vírgula), por exemplo:
+
+```env
+CORS_ALLOWED_ORIGINS=https://junaradeliveryjava-production.up.railway.app,https://*.github.io
+```
+
 ### **Criar executável JAR**
 ```bash
 mvn clean package -DskipTests
