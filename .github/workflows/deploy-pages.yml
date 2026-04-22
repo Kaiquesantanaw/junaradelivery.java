@@ -13,6 +13,9 @@ permissions:
   pages: write
   id-token: write
 
+env:
+  BACKEND_URL: https://junaradeliveryjava-production.up.railway.app
+
 concurrency:
   group: "pages"
   cancel-in-progress: true
@@ -25,23 +28,28 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Build static site
+        shell: bash
+        env:
+          BACKEND_URL: ${{ env.BACKEND_URL }}
         run: |
           mkdir -p _site
           cp src/main/resources/templates/shop.html _site/index.html
           python - <<'PY'
+          import os
           from pathlib import Path
 
           page = Path("_site/index.html")
           html = page.read_text(encoding="utf-8")
+          backend_url = os.environ["BACKEND_URL"]
 
           html = html.replace(
               '<a href="/">Dashboard</a>',
-              '<a href="https://junaradeliveryjava-production.up.railway.app/admin" target="_blank" rel="noopener">Dashboard</a>',
+              f'<a href="{backend_url}/admin" target="_blank" rel="noopener">Dashboard</a>',
           )
           html = html.replace('<a href="/shop">Cardápio</a>', '<a href="./">Cardápio</a>')
           html = html.replace(
               '<form class="logout" th:action="@{/logout}" method="post">\n            <button type="submit">Sair</button>\n        </form>',
-              '<a href="https://junaradeliveryjava-production.up.railway.app/admin" target="_blank" rel="noopener">Admin</a>',
+              f'<a href="{backend_url}/admin" target="_blank" rel="noopener">Admin</a>',
           )
 
           page.write_text(html, encoding="utf-8")
